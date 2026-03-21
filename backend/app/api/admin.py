@@ -37,3 +37,10 @@ def get_current_policy():
         rules_count=len(policy.rules),
         source_hash=policy.source_hash
     )
+
+
+from app.services.audit_logger import get_recent_events
+
+@router.get("/audit/events")
+def get_audit_events(limit: int = 50):
+    return {"events": get_recent_events(limit)}
