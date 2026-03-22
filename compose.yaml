@@ -1,0 +1,57 @@
+name: secure-ai-pipeline
+
+networks:
+  public_net:
+    driver: bridge
+  internal_net:
+    driver: bridge
+
+services:
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Containerfile
+    ports:
+      - "5173:5173"
+    networks:
+      - public_net
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Containerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - public_net
+      - internal_net
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CHROMA_PERSIST_DIR=/app/chroma_db
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - GUARDIAN_MODEL=${GUARDIAN_MODEL:-hf.co/ibm-granite/granite-guardian-3.3-8b-GGUF}
+      - LLM_MODEL=${LLM_MODEL:-granite3.3:2b}
+      - POLICIES_DIR=/app/policies
+      - GG_TIMEOUT=20
+      - LLM_TIMEOUT=120
+      - RATE_LIMIT_PER_MIN=10
+      - MAX_QUEUED_JOBS=2
+    volumes:
+      - ./backend/chroma_db:/app/chroma_db
+      - ./backend/policies:/app/policies
+      - ./backend/logs:/app/logs
+    depends_on:
+      - redis
+
+  redis:
+    image: redis:7-alpine
+    networks:
+      - internal_net
+    volumes:
+      - redis_data:/data
+
+volumes:
+  redis_data:
