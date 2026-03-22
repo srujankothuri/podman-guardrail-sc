@@ -22,3 +22,9 @@ policies/archive/*.json
 # Misc
 .DS_Store
 *.log
+# Generated data
+backend/chroma_db/
+backend/logs/
+backend/policies/active/
+backend/policies/archive/
+backend/ingest_sample.py
