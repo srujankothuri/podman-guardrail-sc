@@ -22,7 +22,7 @@ def process_job(job_id: str) -> None:
 
     try:
         # ── Retrieval with GG2 ───────────────────────────────────────
-        update_job(job_id, status="retrieval_attempt_1")
+        update_job(job_id, status="retrieving_knowledge")
         log_event("retrieval_started", job_id=job_id, user_id=user_id)
 
         chunks = retrieve_chunks(prompt, top_k=5)
@@ -32,20 +32,15 @@ def process_job(job_id: str) -> None:
         gg2_result = run_gg2(prompt, chunks, job_id=job_id, user_id=user_id)
 
         if gg2_result["decision"] == "insufficient" and retrieval_attempts < MAX_RETRIEVAL_ATTEMPTS:
-            # Retry with more chunks
-            update_job(job_id, status="retrieval_attempt_2")
             retrieval_attempts = 2
             chunks = retrieve_chunks(prompt, top_k=10)
             gg2_result = run_gg2(prompt, chunks, job_id=job_id, user_id=user_id)
 
         if gg2_result["decision"] in ("insufficient", "error"):
             insufficient_data = True
-            log_event("gg2_insufficient", job_id=job_id, user_id=user_id,
-                      details={"retrieval_attempts": retrieval_attempts,
-                               "proceeding_with_warning": True})
 
         # ── LLM generation ───────────────────────────────────────────
-        update_job(job_id, status="llm_generating")
+        update_job(job_id, status="generating")
         log_event("llm_started", job_id=job_id, user_id=user_id)
 
         context = "\n\n".join(chunks) if chunks else "No relevant context found."
@@ -65,7 +60,7 @@ def process_job(job_id: str) -> None:
         log_event("llm_completed", job_id=job_id, user_id=user_id)
 
         # ── GG3 output check ─────────────────────────────────────────
-        update_job(job_id, status="gg3_check")
+        update_job(job_id, status="validating")
         gg3_result = run_gg3(prompt, answer, rules, job_id=job_id, user_id=user_id)
 
         if gg3_result["decision"] == "block":
