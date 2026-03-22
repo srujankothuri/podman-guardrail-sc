@@ -10,6 +10,14 @@ OLLAMA_URL       = f"{OLLAMA_BASE_URL}/api/generate"
 
 print("Guardian client ready.")
 
+# Status values that match the frontend StatusIndicator
+STATUS_QUEUED      = "queued"
+STATUS_GG1         = "checking_compliance"
+STATUS_RETRIEVAL_1 = "retrieving_knowledge"
+STATUS_RETRIEVAL_2 = "retrieving_knowledge"
+STATUS_LLM         = "generating"
+STATUS_GG3         = "validating"
+
 def _call_guardian(prompt: str, criteria_text: str,
                    response_text: str = None,
                    context: str = None) -> str | None:
@@ -66,7 +74,7 @@ Respond ONLY with <score>yes</score> if the criteria is violated, or <score>no</
         cleaned = raw.strip().lower().rstrip(".")
         if cleaned in ["yes", "no"]:
             return cleaned
-        return "yes"  # default to block on unparseable response
+        return "no"  # default safe
     except requests.exceptions.Timeout:
         return "timeout"
     except Exception:
